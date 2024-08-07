@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple File Share</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            margin: 0;
+        }
+        .half {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #upload { background-color: #f0f0f0; }
+        #receive { background-color: #e0e0e0; }
+        input, button { margin: 10px 0; }
+        #secret { width: 100%; word-break: break-all; }
+        #log { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            background: #333; 
+            color: #fff; 
+            padding: 10px; 
+            max-height: 100px; 
+            overflow-y: auto; 
+        }
+    </style>
+</head>
+<body>
+    <div id="upload" class="half">
+        <h2>Upload File</h2>
+        <input type="file" id="fileInput">
+        <button onclick="uploadFile()">Upload & Generate Secret</button>
+        <p id="secret"></p>
+    </div>
+    <div id="receive" class="half">
+        <h2>Receive File</h2>
+        <input type="text" id="secretInput" placeholder="Paste secret here">
+        <button onclick="receiveFile()">Receive File</button>
+        <a id="downloadLink" style="display: none;">Download File</a>
+    </div>
+    <div id="log"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/webtorrent/1.9.7/webtorrent.min.js"></script>
+    <script>
+        let client;
+
+        function log(message) {
+            console.log(message);
+            const logElement = document.getElementById('log');
+            logElement.innerHTML += message + '<br>';
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function initWebTorrent() {
+            if (typeof WebTorrent === 'undefined') {
+                log('WebTorrent failed to load. Please check your internet connection and try reloading the page.');
+                return false;
+            }
+            try {
+                client = new WebTorrent();
+                log('WebTorrent initialized successfully');
+                return true;
+            } catch (error) {
+                log('Error initializing WebTorrent: ' + error.message);
+                return false;
+            }
+        }
+
+        function uploadFile() {
+            if (!initWebTorrent()) return;
+
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) return log('Please select a file first.');
+
+            log('Starting file seed...');
+            client.seed(file, torrent => {
+                const secret = torrent.magnetURI;
+                document.getElementById('secret').textContent = secret;
+                log('File seeded successfully. Secret generated.');
+            });
+        }
+
+        function receiveFile() {
+            if (!initWebTorrent()) return;
+
+            const secret = document.getElementById('secretInput').value;
+            if (!secret) return log('Please enter a secret.');
+
+            log('Starting file download...');
+            client.add(secret, torrent => {
+                log('Torrent added, waiting for file...');
+                const file = torrent.files[0];
+                file.getBlobURL((err, url) => {
+                    if (err) return log('Error getting blob URL: ' + err.message);
+                    const link = document.getElementById('downloadLink');
+                    link.href = url;
+                    link.download = file.name;
+                    link.textContent = 'Download ' + file.name;
+                    link.style.display = 'block';
+                    log('File ready for download.');
+                });
+            });
+        }
+    </script>
+</body>
+</html>
