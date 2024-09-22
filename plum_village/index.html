@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mindfulness Bell Meditation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .controls, .audio-controls {
+            width: 90%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        label, input {
+            font-size: 18px;
+        }
+        input[type="number"], input[type="time"] {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+        }
+        button {
+            padding: 12px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        #countdown {
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 30px; /* Added space below the countdown */
+        }
+        audio {
+            width: 100%;
+        }
+        .credits {
+            font-size: 14px;
+            color: #777;
+            margin-top: 5px;
+            text-align: center;
+        }
+        .hidden {
+            display: none;
+        }
+        .show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Mindfulness Bell Meditation</h1>
+
+    <div class="controls">
+        <label for="interval">Set interval (minutes):</label>
+        <input type="number" id="interval" value="15" min="1" max="60">
+
+        <label for="start-time">Start Time (default 8AM):</label>
+        <input type="time" id="start-time" value="08:00">
+
+        <label for="end-time">End Time (default 10PM):</label>
+        <input type="time" id="end-time" value="22:00">
+
+        <button id="start-bell">Start Bell Meditation</button>
+        <button id="stop-bell" disabled>Stop Bell Meditation</button>
+
+        <div id="countdown">Next bell in: --:--</div>
+    </div>
+
+    <div class="audio-controls">
+        <!-- Morning meditation chant -->
+        <label for="morning-audio">Morning Meditation Chant:</label>
+        <button id="load-morning-audio">Show Morning Meditation Chant</button>
+        <audio id="morning-audio" controls class="hidden" preload="none">
+            Your browser does not support the audio element.
+        </audio>
+        <div id="morning-credits" class="credits hidden">Morning chant - source <a href="https://web.plumvillage.app/meditations">Plum Village App</a></div>
+
+        <!-- Evening meditation chant -->
+        <label for="evening-audio">Evening Meditation Chant:</label>
+        <button id="load-evening-audio">Show Evening Meditation Chant</button>
+        <audio id="evening-audio" controls class="hidden" preload="none">
+            Your browser does not support the audio element.
+        </audio>
+        <div id="evening-credits" class="credits hidden">Evening chant - source <a href="https://web.plumvillage.app/meditations">Plum Village App</a></div>
+    </div>
+
+    <audio id="bell-sound" src="./assets/big_bell.mp3"></audio>
+
+    <script>
+        const bellSound = document.getElementById('bell-sound');
+        const startButton = document.getElementById('start-bell');
+        const stopButton = document.getElementById('stop-bell');
+        const intervalInput = document.getElementById('interval');
+        const startTimeInput = document.getElementById('start-time');
+        const endTimeInput = document.getElementById('end-time');
+        const countdownDisplay = document.getElementById('countdown');
+
+        const morningAudio = document.getElementById('morning-audio');
+        const eveningAudio = document.getElementById('evening-audio');
+        const loadMorningAudioButton = document.getElementById('load-morning-audio');
+        const loadEveningAudioButton = document.getElementById('load-evening-audio');
+        const morningCredits = document.getElementById('morning-credits');
+        const eveningCredits = document.getElementById('evening-credits');
+
+        let intervalID;
+        let countdownID;
+        let bellInterval = 15 * 60 * 1000; // Default to 15 minutes
+        let startTime = new Date().setHours(8, 0, 0); // Default start time 8AM
+        let endTime = new Date().setHours(22, 0, 0); // Default end time 10PM
+
+        // Show and load morning audio when button is clicked
+        loadMorningAudioButton.addEventListener('click', () => {
+            morningAudio.src = 'https://pvappaudio.b-cdn.net/b11bb74c-5403-4eb9-b3bd-957a61863156.mp3'; // Lazy load audio source
+            morningAudio.classList.remove('hidden');
+            loadMorningAudioButton.classList.add('hidden');  // Hide the button
+            morningCredits.classList.remove('hidden'); // Show the credits
+        });
+
+        // Show and load evening audio when button is clicked
+        loadEveningAudioButton.addEventListener('click', () => {
+            eveningAudio.src = 'https://pvappaudio.b-cdn.net/f8cebe14-5c09-4037-bfdf-2a04ee43304d.mp3'; // Lazy load audio source
+            eveningAudio.classList.remove('hidden');
+            loadEveningAudioButton.classList.add('hidden');  // Hide the button
+            eveningCredits.classList.remove('hidden'); // Show the credits
+        });
+
+        // Update interval
+        intervalInput.addEventListener('input', () => {
+            bellInterval = intervalInput.value * 60 * 1000;
+        });
+
+        // Start bell meditation
+        startButton.addEventListener('click', () => {
+            startTime = new Date();
+            startTime.setHours(startTimeInput.value.split(":")[0]);
+            startTime.setMinutes(startTimeInput.value.split(":")[1]);
+            
+            endTime = new Date();
+            endTime.setHours(endTimeInput.value.split(":")[0]);
+            endTime.setMinutes(endTimeInput.value.split(":")[1]);
+
+            ringBellOnce();
+            scheduleNextBell();
+
+            startButton.disabled = true;
+            stopButton.disabled = false;
+        });
+
+        // Stop bell meditation
+        stopButton.addEventListener('click', () => {
+            clearInterval(intervalID);
+            clearInterval(countdownID);
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            countdownDisplay.textContent = "Next bell in: --:--";
+        });
+
+        // Ring the bell immediately
+        function ringBellOnce() {
+            bellSound.play();
+        }
+
+        // Schedule the next bell with countdown timer
+        function scheduleNextBell() {
+            const now = new Date();
+            const nextBellTime = new Date(Math.ceil(now.getTime() / bellInterval) * bellInterval);
+            const timeUntilNextBell = nextBellTime - now;
+
+            // Set countdown timer
+            updateCountdown(timeUntilNextBell);
+            countdownID = setInterval(() => {
+                updateCountdown(nextBellTime - new Date());
+            }, 1000);
+
+            // Play the bell at the correct time and set the next interval
+            setTimeout(() => {
+                bellSound.play();
+                scheduleNextBell();  // Recursively schedule the next bell
+            }, timeUntilNextBell);
+        }
+
+        // Update countdown display
+        function updateCountdown(milliseconds) {
+            const minutes = Math.floor(milliseconds / (1000 * 60));
+            const seconds = Math.floor((milliseconds % (1000 * 60)) / 1000);
+            countdownDisplay.textContent = `Next bell in: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // Auto start the bell at correct intervals when page is loaded
+        window.onload = () => {
+            // You can uncomment this line to automatically start the bell when the page is loaded
+            // startButton.click();
+        };
+    </script>
+
+</body>
+</html>
