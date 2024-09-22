@@ -192,14 +192,15 @@
             // Set countdown timer
             updateCountdown(timeUntilNextBell);
             countdownID = setInterval(() => {
-                updateCountdown(nextBellTime - new Date());
+                const timeRemaining = nextBellTime - new Date();
+                if (timeRemaining <= 0) {
+                    clearInterval(countdownID); // Stop the countdown when it reaches 0
+                    ringBellOnce();
+                    scheduleNextBell(); // Schedule the next bell after ringing
+                } else {
+                    updateCountdown(timeRemaining); // Continue updating countdown
+                }
             }, 1000);
-
-            // Play the bell at the correct time and set the next interval
-            setTimeout(() => {
-                bellSound.play();
-                scheduleNextBell();  // Recursively schedule the next bell
-            }, timeUntilNextBell);
         }
 
         // Update countdown display
