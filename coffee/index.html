@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Coffee O'Clock</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Include Font Awesome CSS for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-1zcK6kgDnS4tI2UrjqS6He3VvNzgszKEeMPlE5xdTg3q0X+YgXFtWwPX8H6Zfjhms3s5z5N5K3KkPR1iHAw3Yw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 15px;
+            background-color: #fff;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        .clock {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        /* Toggle Button */
+        .toggle-button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Drink Selection Styles */
+        .drink-selection {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .drink-button {
+            flex: 1 0 30%;
+            margin: 5px;
+            padding: 10px;
+            background-color: #eee;
+            border: none;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.8em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .drink-button i {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .drink-button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        /* Bedtime Selection */
+        .bedtime-selection {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="number"], input[type="time"] {
+            padding: 8px;
+            width: calc(100% - 16px);
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Result and Warning */
+        .result {
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            background-color: #e7f4e4;
+            border: 1px solid #d4edda;
+        }
+
+        /* Hidden Sections */
+        .hidden {
+            display: none;
+        }
+
+        /* Planner Mode Styles */
+        .intake-item {
+            border-bottom: 1px solid #ccc;
+            padding: 10px 0;
+        }
+
+        .intake-item:last-child {
+            border-bottom: none;
+        }
+
+        .intake-item .drink-selection {
+            margin-bottom: 5px;
+        }
+
+        .intake-item input[type="time"], .intake-item input[type="number"] {
+            width: calc(100% - 16px);
+        }
+
+        .intake-item .remove-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 600px) {
+            .clock {
+                font-size: 1.2em;
+            }
+
+            .drink-button {
+                flex: 1 0 45%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Coffee O'Clock</h1>
+        <div class="clock" id="digitalClock"></div>
+
+        <!-- Toggle Button -->
+        <button class="toggle-button" id="toggleModeBtn">Switch to Planner Mode</button>
+
+        <!-- Default Calculator -->
+        <div id="defaultCalculator">
+            <p style="text-align: center;">Should I take a ... now?</p>
+
+            <!-- Drink Selection -->
+            <div class="drink-selection" id="drinkSelection">
+                <button class="drink-button active" data-caffeine="90">
+                    <i class="fas fa-mug-hot"></i>
+                    Coffee<br>(90mg)
+                </button>
+                <button class="drink-button" data-caffeine="63">
+                    <i class="fas fa-coffee"></i>
+                    Espresso<br>(63mg)
+                </button>
+                <button class="drink-button" data-caffeine="126">
+                    <i class="fas fa-coffee"></i>
+                    Double Espresso<br>(126mg)
+                </button>
+                <button class="drink-button" data-caffeine="80">
+                    <i class="fas fa-wine-bottle"></i>
+                    Red Bull<br>(80mg)
+                </button>
+                <button class="drink-button" data-caffeine="160">
+                    <i class="fas fa-wine-bottle"></i>
+                    Monster<br>(160mg)
+                </button>
+                <button class="drink-button" data-caffeine="45">
+                    <i class="fas fa-leaf"></i>
+                    Tea<br>(45mg)
+                </button>
+                <button class="drink-button" id="customCaffeineBtn">
+                    <i class="fas fa-question"></i>
+                    Custom
+                </button>
+            </div>
+            <input type="number" id="customCaffeineInput" placeholder="Enter caffeine amount (mg)" style="display:none;">
+
+            <!-- Bedtime Selection -->
+            <div class="bedtime-selection">
+                <label for="bedtime">Select your bedtime:</label>
+                <input type="time" id="bedtime" value="23:00">
+            </div>
+
+            <!-- Result Display -->
+            <div class="result" id="result" style="display:none;"></div>
+        </div>
+
+        <!-- Planner Mode -->
+        <div id="plannerMode" class="hidden">
+            <p style="text-align: center;">Plan your caffeine intake throughout the day:</p>
+            <div id="intakeList"></div>
+            <button class="toggle-button" id="addIntakeBtn">Add Caffeine Intake</button>
+
+            <!-- Bedtime Selection -->
+            <div class="bedtime-selection">
+                <label for="plannerBedtime">Select your bedtime:</label>
+                <input type="time" id="plannerBedtime" value="23:00">
+            </div>
+
+            <div class="result" id="plannerResult" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Display current time
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours() % 12 || 12;
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+            document.getElementById('digitalClock').textContent = `${hours}:${minutes} ${ampm}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Toggle between modes
+        const toggleModeBtn = document.getElementById('toggleModeBtn');
+        const defaultCalculator = document.getElementById('defaultCalculator');
+        const plannerMode = document.getElementById('plannerMode');
+
+        toggleModeBtn.addEventListener('click', () => {
+            if (defaultCalculator.classList.contains('hidden')) {
+                defaultCalculator.classList.remove('hidden');
+                plannerMode.classList.add('hidden');
+                toggleModeBtn.textContent = 'Switch to Planner Mode';
+            } else {
+                defaultCalculator.classList.add('hidden');
+                plannerMode.classList.remove('hidden');
+                toggleModeBtn.textContent = 'Switch to Default Calculator';
+            }
+        });
+
+        // Drink Selection
+        const drinkButtons = document.querySelectorAll('#defaultCalculator .drink-button');
+        let selectedCaffeine = 90; // Default to Coffee
+        const customCaffeineBtn = document.getElementById('customCaffeineBtn');
+        const customCaffeineInput = document.getElementById('customCaffeineInput');
+
+        drinkButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                drinkButtons.forEach(btn => btn.classList.remove('active'));
+                // Add active class to clicked button
+                button.classList.add('active');
+
+                if (button.id === 'customCaffeineBtn') {
+                    customCaffeineInput.style.display = 'block';
+                    customCaffeineInput.value = '';
+                    selectedCaffeine = 0;
+                    customCaffeineInput.addEventListener('input', () => {
+                        selectedCaffeine = parseFloat(customCaffeineInput.value) || 0;
+                        updateResult();
+                    });
+                } else {
+                    customCaffeineInput.style.display = 'none';
+                    selectedCaffeine = parseFloat(button.getAttribute('data-caffeine'));
+                }
+                updateResult();
+            });
+        });
+
+        // Bedtime Selection
+        const bedtimeInput = document.getElementById('bedtime');
+        bedtimeInput.addEventListener('change', updateResult);
+
+        // Result Display
+        const resultDiv = document.getElementById('result');
+
+        function updateResult() {
+            const bedtime = bedtimeInput.value;
+            const bedtimeHour = parseInt(bedtime.split(':')[0]);
+            const bedtimeMinutes = parseInt(bedtime.split(':')[1]);
+            const bedtimeInHours = bedtimeHour + bedtimeMinutes / 60;
+
+            const now = new Date();
+            const currentTimeInHours = now.getHours() + now.getMinutes() / 60;
+            let hoursToBed = bedtimeInHours - currentTimeInHours;
+            if (hoursToBed < 0) hoursToBed += 24;
+
+            const remainingCaffeine = calculateCaffeine(selectedCaffeine, hoursToBed);
+
+            if (selectedCaffeine > 0) {
+                resultDiv.style.display = 'block';
+                const drinkName = getSelectedDrinkName();
+                const sleepImpact = getSleepImpact(remainingCaffeine);
+                resultDiv.innerHTML = `If you take a <strong>${drinkName}</strong> now, by <strong>${formatTime(bedtimeInHours)}</strong> you will have about <strong>${remainingCaffeine.toFixed(1)}mg</strong> of caffeine in your system, which ${sleepImpact}.`;
+            } else {
+                resultDiv.style.display = 'none';
+            }
+        }
+
+        // Initial result update
+        updateResult();
+
+        // Helper Functions
+        function calculateCaffeine(amount, hours) {
+            return amount * Math.pow(0.5, hours / 6);
+        }
+
+        function getSleepImpact(remainingCaffeine) {
+            if (remainingCaffeine > 50) {
+                return `could significantly disrupt your sleep quality (<a href="https://www.sleepfoundation.org/nutrition/caffeine-and-sleep" target="_blank">learn more</a>)`;
+            } else if (remainingCaffeine > 30) {
+                return `may delay your sleep onset (<a href="https://www.sleepfoundation.org/nutrition/caffeine-and-sleep" target="_blank">learn more</a>)`;
+            } else if (remainingCaffeine > 10) {
+                return `might have a minor impact on sleep (<a href="https://www.sleepfoundation.org/nutrition/caffeine-and-sleep" target="_blank">learn more</a>)`;
+            } else {
+                return `is unlikely to affect your sleep`;
+            }
+        }
+
+        function formatTime(hours) {
+            let hour = Math.floor(hours);
+            let minutes = Math.round((hours - hour) * 60);
+            let period = 'AM';
+            if (hour >= 12) {
+                period = 'PM';
+                if (hour > 12) hour -= 12;
+            }
+            if (hour === 0) {
+                hour = 12;
+            }
+            return `${hour}:${String(minutes).padStart(2, '0')} ${period}`;
+        }
+
+        function getSelectedDrinkName() {
+            const activeButton = document.querySelector('#defaultCalculator .drink-button.active');
+            if (activeButton) {
+                const name = activeButton.innerText.split('\n')[0];
+                return name;
+            }
+            return 'Drink';
+        }
+
+        // Planner Mode
+        const addIntakeBtn = document.getElementById('addIntakeBtn');
+        const intakeList = document.getElementById('intakeList');
+        const plannerResult = document.getElementById('plannerResult');
+        const plannerBedtimeInput = document.getElementById('plannerBedtime');
+        plannerBedtimeInput.addEventListener('change', updatePlannerResult);
+
+        addIntakeBtn.addEventListener('click', addIntakeItem);
+
+        function addIntakeItem() {
+            const intakeDiv = document.createElement('div');
+            intakeDiv.classList.add('intake-item');
+
+            const drinkSelectionDiv = document.createElement('div');
+            drinkSelectionDiv.classList.add('drink-selection');
+
+            const drinks = [
+                { name: 'Coffee', caffeine: 90, icon: 'fas fa-mug-hot' },
+                { name: 'Espresso', caffeine: 63, icon: 'fas fa-coffee' },
+                { name: 'Double Espresso', caffeine: 126, icon: 'fas fa-coffee' },
+                { name: 'Red Bull', caffeine: 80, icon: 'fas fa-wine-bottle' },
+                { name: 'Monster', caffeine: 160, icon: 'fas fa-wine-bottle' },
+                { name: 'Tea', caffeine: 45, icon: 'fas fa-leaf' },
+                { name: 'Custom', caffeine: 0, icon: 'fas fa-question', isCustom: true }
+            ];
+
+            let selectedCaffeine = 0;
+            let selectedDrinkName = '';
+            let customCaffeineInput;
+
+            drinks.forEach(drink => {
+                const button = document.createElement('button');
+                button.classList.add('drink-button');
+                button.dataset.caffeine = drink.caffeine;
+
+                const icon = document.createElement('i');
+                icon.className = drink.icon;
+                button.appendChild(icon);
+
+                const text = document.createElement('span');
+                text.innerHTML = `${drink.name}${drink.isCustom ? '' : `<br>(${drink.caffeine}mg)`}`;
+                button.appendChild(text);
+
+                button.addEventListener('click', () => {
+                    // Remove active class from all buttons
+                    drinkSelectionDiv.querySelectorAll('.drink-button').forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    button.classList.add('active');
+
+                    selectedDrinkName = drink.name;
+
+                    if (drink.isCustom) {
+                        customCaffeineInput.style.display = 'block';
+                        customCaffeineInput.value = '';
+                        selectedCaffeine = 0;
+                        customCaffeineInput.addEventListener('input', () => {
+                            selectedCaffeine = parseFloat(customCaffeineInput.value) || 0;
+                            updatePlannerResult();
+                        });
+                    } else {
+                        if (customCaffeineInput) customCaffeineInput.style.display = 'none';
+                        selectedCaffeine = drink.caffeine;
+                        updatePlannerResult();
+                    }
+                });
+
+                drinkSelectionDiv.appendChild(button);
+            });
+
+            customCaffeineInput = document.createElement('input');
+            customCaffeineInput.type = 'number';
+            customCaffeineInput.placeholder = 'Enter caffeine amount (mg)';
+            customCaffeineInput.style.display = 'none';
+            customCaffeineInput.addEventListener('input', updatePlannerResult);
+
+            const timeInput = document.createElement('input');
+            timeInput.type = 'time';
+            timeInput.value = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute:'2-digit' });
+            timeInput.addEventListener('change', updatePlannerResult);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = 'Remove';
+            removeBtn.classList.add('remove-btn');
+            removeBtn.addEventListener('click', () => {
+                intakeList.removeChild(intakeDiv);
+                updatePlannerResult();
+            });
+
+            intakeDiv.appendChild(drinkSelectionDiv);
+            intakeDiv.appendChild(customCaffeineInput);
+            intakeDiv.appendChild(timeInput);
+            intakeDiv.appendChild(removeBtn);
+
+            intakeDiv.dataset.selectedCaffeine = selectedCaffeine;
+            intakeDiv.dataset.selectedDrinkName = selectedDrinkName;
+
+            intakeList.appendChild(intakeDiv);
+
+            updatePlannerResult();
+        }
+
+        function updatePlannerResult() {
+            const bedtime = plannerBedtimeInput.value;
+            const bedtimeHour = parseInt(bedtime.split(':')[0]);
+            const bedtimeMinutes = parseInt(bedtime.split(':')[1]);
+            const bedtimeInHours = bedtimeHour + bedtimeMinutes / 60;
+
+            let totalRemainingCaffeine = 0;
+            let summary = '';
+
+            const intakeItems = intakeList.querySelectorAll('.intake-item');
+            intakeItems.forEach(item => {
+                const selectedButton = item.querySelector('.drink-button.active');
+                let caffeineAmount = 0;
+                let drinkName = 'Drink';
+                if (selectedButton) {
+                    if (selectedButton.textContent.includes('Custom')) {
+                        const customInput = item.querySelector('input[type="number"]');
+                        caffeineAmount = parseFloat(customInput.value) || 0;
+                        drinkName = 'Custom Drink';
+                    } else {
+                        caffeineAmount = parseFloat(selectedButton.getAttribute('data-caffeine'));
+                        drinkName = selectedButton.innerText.split('\n')[0];
+                    }
+
+                    const timeInput = item.querySelector('input[type="time"]');
+                    const intakeTime = timeInput.value;
+                    const intakeHour = parseInt(intakeTime.split(':')[0]);
+                    const intakeMinutes = parseInt(intakeTime.split(':')[1]);
+                    const intakeTimeInHours = intakeHour + intakeMinutes / 60;
+
+                    let hoursToBed = bedtimeInHours - intakeTimeInHours;
+                    if (hoursToBed < 0) hoursToBed += 24;
+
+                    const remainingCaffeine = calculateCaffeine(caffeineAmount, hoursToBed);
+                    totalRemainingCaffeine += remainingCaffeine;
+
+                    summary += `<li>${drinkName} at ${formatTime(intakeTimeInHours)} (${caffeineAmount}mg)</li>`;
+                }
+            });
+
+            if (intakeItems.length > 0) {
+                plannerResult.style.display = 'block';
+                const sleepImpact = getSleepImpact(totalRemainingCaffeine);
+                plannerResult.innerHTML = `
+                    <p>By <strong>${formatTime(bedtimeInHours)}</strong>, you will have a total of <strong>${totalRemainingCaffeine.toFixed(1)}mg</strong> of caffeine in your system, which ${sleepImpact}.</p>
+                    <p>Summary of your intake:</p>
+                    <ul>${summary}</ul>
+                `;
+            } else {
+                plannerResult.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
