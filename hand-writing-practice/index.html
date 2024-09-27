@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Handwriting Practice Board</title>
+    <!-- Load Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Handlee|Indie+Flower|Shadows+Into+Light|Caveat|Patrick+Hand|Reenie+Beanie|Permanent+Marker|Gloria+Hallelujah|Architects+Daughter|Kaushan+Script&display=swap" rel="stylesheet">
+    <style>
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Container for the entire application */
+        .container {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Sidebar for controls */
+        .sidebar {
+            width: 300px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 15px;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group textarea,
+        .form-group select,
+        .form-group input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .form-group input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        /* Buttons */
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .buttons button {
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .buttons button:hover {
+            background-color: #ddd;
+        }
+
+        /* Main content area */
+        .main-content {
+            flex: 1;
+            position: relative;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* Canvas containers */
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Stacked canvases */
+        .canvas-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Sidebar for controls -->
+        <div class="sidebar">
+            <h2>Controls</h2>
+            <div class="form-group">
+                <label for="inputText">Text:</label>
+                <textarea id="inputText" rows="6" placeholder="Enter your text here...">The Dunning-Kruger Prayer:
+Let me be smart enough to know how dumb I am and give me the courage to carry on anyway.
+Austin Kleon
+                </textarea>
+            </div>
+            <div class="form-group">
+                <label for="fontSelect">Font:</label>
+                <select id="fontSelect">
+                    <option value="Indie Flower">Indie Flower</option>
+                    <option value="Patrick Hand">Patrick Hand</option>
+                    <option value="Handlee">Handlee</option>
+                    <option value="Shadows Into Light">Shadows Into Light</option>
+                    <option value="Caveat">Caveat</option>
+                    <option value="Reenie Beanie">Reenie Beanie</option>
+                    <option value="Permanent Marker">Permanent Marker</option>
+                    <option value="Gloria Hallelujah">Gloria Hallelujah</option>
+                    <option value="Architects Daughter">Architects Daughter</option>
+                    <option value="Kaushan Script">Kaushan Script</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="fontSize">Font Size (px):</label>
+                <input type="number" id="fontSize" value="50" min="12" max="120">
+            </div>
+            <div class="form-group">
+                <label for="lineSpacing">Line Spacing:</label>
+                <input type="number" id="lineSpacing" value="1.2" min="1" max="3" step="0.1">
+            </div>
+            <div class="form-group">
+                <label for="penSize">Pen Size (px):</label>
+                <input type="number" id="penSize" value="4" min="1" max="20">
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="toggleText" checked>
+                    Show Text
+                </label>
+            </div>
+            <div class="buttons">
+                <button id="generateBtn">Generate Board</button>
+                <button id="downloadBtn">Download as PNG</button>
+                <button id="clearBtn">Clear Drawing</button>
+            </div>
+        </div>
+
+        <!-- Main content area for canvases -->
+        <div class="main-content">
+            <div class="canvas-container">
+                <!-- Text Canvas -->
+                <canvas id="textCanvas" class="canvas-layer"></canvas>
+                <!-- Drawing Canvas -->
+                <canvas id="drawingCanvas" class="canvas-layer"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get elements
+        const inputText = document.getElementById('inputText');
+        const fontSelect = document.getElementById('fontSelect');
+        const fontSizeInput = document.getElementById('fontSize');
+        const lineSpacingInput = document.getElementById('lineSpacing');
+        const penSizeInput = document.getElementById('penSize');
+        const toggleTextCheckbox = document.getElementById('toggleText');
+        const generateBtn = document.getElementById('generateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const textCanvas = document.getElementById('textCanvas');
+        const drawingCanvas = document.getElementById('drawingCanvas');
+        const textCtx = textCanvas.getContext('2d');
+        const drawCtx = drawingCanvas.getContext('2d');
+
+        // Initialize canvases
+        function initializeCanvases() {
+            const container = document.querySelector('.canvas-container');
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight || 800; // Set a default height if needed
+
+            // Set canvas sizes to match container
+            textCanvas.width = containerWidth;
+            textCanvas.height = containerHeight;
+            drawingCanvas.width = containerWidth;
+            drawingCanvas.height = containerHeight;
+        }
+
+        // Function to render text on textCanvas
+        async function renderText() {
+            // Clear text canvas
+            textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
+        
+            // Get font properties
+            const font = fontSelect.value;
+            const fontSize = parseInt(fontSizeInput.value);
+            const lineSpacing = parseFloat(lineSpacingInput.value);
+        
+            // Wait for the font to load
+            await document.fonts.load(`${fontSize}px "${font}"`);
+        
+            // Set font properties after ensuring the font is loaded
+            textCtx.font = `${fontSize}px "${font}"`;
+            textCtx.fillStyle = '#888';
+        
+            // Split and wrap text
+            const text = inputText.value;
+            const lines = text.split('\n');
+            const maxWidth = textCanvas.width - 40; // 20px padding on each side
+            const lineHeight = fontSize * lineSpacing;
+            let y = fontSize + 20;
+        
+            lines.forEach(line => {
+                const wrappedLines = wrapText(textCtx, line, maxWidth);
+                wrappedLines.forEach(wrappedLine => {
+                    textCtx.fillText(wrappedLine, 20, y);
+                    y += lineHeight;
+                });
+            });
+        }
+
+        // Utility function to wrap text
+        function wrapText(context, text, maxWidth) {
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = '';
+
+            words.forEach(word => {
+                const testLine = currentLine + word + ' ';
+                const testWidth = context.measureText(testLine).width;
+                if (testWidth > maxWidth && currentLine !== '') {
+                    lines.push(currentLine.trim());
+                    currentLine = word + ' ';
+                } else {
+                    currentLine = testLine;
+                }
+            });
+
+            lines.push(currentLine.trim());
+            return lines;
+        }
+
+        // Toggle text visibility
+        function toggleTextVisibility() {
+            textCanvas.style.display = toggleTextCheckbox.checked ? 'block' : 'none';
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initializeCanvases();
+            renderText();
+        });
+
+        // Initialize canvases on load
+        window.addEventListener('load', () => {
+            initializeCanvases();
+            renderText();
+            toggleTextVisibility();
+        });
+
+        // Drawing variables
+        let drawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        // Set up drawing canvas
+        function setupDrawingCanvas() {
+            // Set white background
+            drawCtx.fillStyle = 'rgba(0,0,0,0)';
+            drawCtx.fillRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+
+            // Set initial pen settings
+            drawCtx.strokeStyle = '#000';
+            drawCtx.lineJoin = 'round';
+            drawCtx.lineCap = 'round';
+            drawCtx.lineWidth = parseInt(penSizeInput.value);
+        }
+
+        // Event listeners for drawing
+        drawingCanvas.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            drawing = true;
+            const { x, y } = getPointerPos(e);
+            [lastX, lastY] = [x, y];
+        });
+
+        drawingCanvas.addEventListener('pointermove', (e) => {
+            e.preventDefault();
+            if (!drawing) return;
+            const { x, y, pressure } = getPointerPos(e);
+
+            drawCtx.strokeStyle = '#000';
+            drawCtx.lineWidth = pressure ? parseFloat(penSizeInput.value) * pressure : parseInt(penSizeInput.value);
+
+            drawCtx.beginPath();
+            drawCtx.moveTo(lastX, lastY);
+            drawCtx.lineTo(x, y);
+            drawCtx.stroke();
+
+            [lastX, lastY] = [x, y];
+        });
+
+        drawingCanvas.addEventListener('pointerup', (e) => {
+            e.preventDefault();
+            drawing = false;
+        });
+
+        drawingCanvas.addEventListener('pointerout', (e) => {
+            e.preventDefault();
+            drawing = false;
+        });
+
+        // Utility function to get pointer position
+        function getPointerPos(e) {
+            const rect = drawingCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const pressure = e.pressure || 1.; // Default pressure if not supported
+            return { x, y, pressure };
+        }
+
+        // Generate Drawing Board
+        generateBtn.addEventListener('click', async () => {
+            await renderText();
+            setupDrawingCanvas();
+        });
+
+        // Download as PNG
+        downloadBtn.addEventListener('click', () => {
+            // Create a temporary canvas to combine text and drawings
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = Math.max(textCanvas.width, drawingCanvas.width);
+            tempCanvas.height = Math.max(textCanvas.height, drawingCanvas.height);
+
+            // Fill background with white
+            tempCtx.fillStyle = '#FFFFFF';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+            // Draw text if visible
+            if (toggleTextCheckbox.checked) {
+                tempCtx.drawImage(textCanvas, 0, 0);
+            }
+
+            // Draw drawings
+            tempCtx.drawImage(drawingCanvas, 0, 0);
+
+            // Create a download link
+            const link = document.createElement('a');
+            link.download = 'handwriting_practice.png';
+            link.href = tempCanvas.toDataURL();
+            link.click();
+        });
+
+        // Clear Drawing
+        clearBtn.addEventListener('click', () => {
+            drawCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            setupDrawingCanvas();
+        });
+
+        // Toggle Text Visibility
+        toggleTextCheckbox.addEventListener('change', () => {
+            toggleTextVisibility();
+        });
+
+        // Update pen size dynamically
+        penSizeInput.addEventListener('input', () => {
+            if (!drawing) {
+                drawCtx.lineWidth = parseInt(penSizeInput.value);
+            }
+        });
+
+        fontSelect.addEventListener('change', async () => {
+            await renderText();
+        });
+
+        window.addEventListener('load', async () => {
+            initializeCanvases();
+            await renderText();
+            setupDrawingCanvas();
+            toggleTextVisibility();
+        });
+        
+    </script>
+
+</body>
+</html>
